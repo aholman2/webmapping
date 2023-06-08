@@ -1,0 +1,561 @@
+<!--To create this site, I refrenced 'VersitileLayout.html', originally created by Andy Cochran,
+From https://medium.com/nyc-planning-digital/a-versatile-layout-for-full-screen-maps-229cec508b22,
+as well as the mapbox tutorial 'Build a venue Locator using Mapbox GL JS',
+From https://docs.mapbox.com/help/tutorials/building-a-venue-locator/-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+    <head>
+        <meta charset="utf-8" />
+        <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+        <title>Eugene Music Venues</title>
+        <script src='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+        <link href='https://api.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
+        <style>
+            body { margin:0; padding:0; font-family: 'Varela Round', sans-serif; }
+            #map { position:absolute; top:0; bottom:0; width:100%; } 
+            h1 { font-size: 22px; margin: 0; font-weight: 400; line-height: 20px; padding: 20px 2px; cursor: pointer; }
+            .sidebar { position: absolute; width: 25%; height: 100%; top: 0; left: 0; overflow: hidden; border-right: 1px solid rgba(0, 0, 0, 0.33); }
+            .heading { border-bottom: 1px solid #eee; min-height: 60px; line-height: 60px; padding: 0 10px; background-color: #00853e; color: #fff; }
+            .listings { height: 100%; overflow: auto; padding-bottom: 60px; background-color: #eee;}
+            .listings .item { border-bottom: 1px solid #000000; padding: 10px; text-decoration: none; }
+            .listings .item:last-child { border-bottom: none; }
+            .listings .item .title { display: block; color: #00853e; font-weight: 700; }
+            .listings .item .title small { font-weight: 400; }
+            .listings .item.active .title,
+            .listings .item .title:hover { color: #8cc63f; }
+            .listings .item.active { background-color: #f8f8f8; }
+            ::-webkit-scrollbar { width: 3px; height: 3px; border-left: 0; background: rgba(0, 0, 0, 0.1); }
+            ::-webkit-scrollbar-track { background: none }
+            ::-webkit-scrollbar-thumb { background: #00853e; border-radius: 0; }
+            .mapboxgl-popup-content { font: 400 15px/22px; padding: 0; width: 300px; }
+            .mapboxgl-popup-content h3 { background: #00853e; color: #fff; margin: 0; padding: 10px; border-radius: 3px 3px 0 0; font-weight: 700; margin-top: -15px; }
+            .mapboxgl-popup-content h4 { margin: 0; padding: 10px; font-weight: 400; }
+            .mapboxgl-popup-content div { padding: 10px; }
+            .mapboxgl-popup-anchor-top > .mapboxgl-popup-content { margin-top: 15px; }
+            .mapboxgl-popup-anchor-top > .mapboxgl-popup-tip { border-bottom-color: #00853e; }
+        </style>
+    </head>
+
+    <body>
+
+        <div id="map"></div>
+
+        <div class="sidebar">
+
+            <div class="heading">
+                <h1 id="pagetitle">Eugene Music Venues</h1>
+            </div>
+
+            <div id="listings" class="listings">
+
+            </div>
+
+        </div>
+
+        <script>
+            //Basemap
+            mapboxgl.accessToken = 'pk.eyJ1IjoiYWhvbG1hbjIiLCJhIjoiY2xnNWZqMTk3MDJydTNncXI2Zjdyb3lnNyJ9.7w1BY7r7Qbd3PAP9udXDnQ'
+            var map = new mapboxgl.Map({
+                container: 'map',
+                style: 'mapbox://styles/mapbox/light-v11',
+                center: [-123.0868,44.0521],
+                zoom: 12,
+                minZoom: 11.5,
+                maxZoom: 15.5,
+                
+            });
+
+            map.boxZoom.disable();
+            map.dragRotate.disable();
+
+           
+
+            //Venues
+            const venues = {
+                "type": "FeatureCollection",
+                "features": [
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "The Cuthbert Amphitheater",
+                                    "type": "Amphitheater",
+                                    "description": "Located in Alton Baker Park, the Cuthbert Amphitheater offers outdoor live music events featuring  both regional and touring acts.<br> <a href='https://thecuthbert.com'>thecuthbert.com</a>",
+                                    "address": "2300 Leo Harris Pkwy, Eugene, OR 97401",
+                                    "phone": "+1 541-762-8099",
+                                    "imglink": "https://www.eugene-or.gov/ImageRepository/Document?documentID=57038",
+                                    "imgsrc": "https://www.eugene-or.gov",
+                                    "imgsrcname": "eugene-or.gov",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.075589,
+                                    44.056035
+                                    ],
+                                "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "The Spot",
+                                    "type": "Concert Hall",
+                                    "description": "Located on Main Street in Springfield, Or, The Spot (f.k.a. Hippie Museum) provides an all ages event space for both local and touring acts.",
+                                    "address": "535 Main St, Springfield, OR 97477",
+                                    "phone": "n/a",
+                                    "imglink": "https://ucarecdn.com/6bbb1f98-b20a-4395-82ca-b3af8600782d/-/crop/5201x2807/0,328/-/resize/500x270/-/scale_crop/800x432/-/format/auto/",
+                                    "imgsrc": "https://calendar.eugeneweekly.com/venues/122642",
+                                    "imgsrcname": "eugeneweekly.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.018667,
+                                    44.046004
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Matthew Knight Arena",
+                                    "type": "Arena",
+                                    "description": "While Matthew Knight Arena mainly serves as a venue for Sporting events, the Arena also hosts touring musicians and events, hosting some of the largest concerts in the region.<br> <a href='https://goducks.com/feature/mka'>goducks.com</a> ",
+                                    "address": "1390 Villard St, Eugene, OR 97403",
+                                    "phone": "+1 541-346-4461",
+                                    "imglink": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Matt_Knight_Arena_%28Eugene%2C_Oregon%29.jpg/500px-Matt_Knight_Arena_%28Eugene%2C_Oregon%29.jpg",
+                                    "imgsrc": "https://en.wikipedia.org/wiki/Matthew_Knight_Arena",
+                                    "imgsrcname": "wikipedia.org",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.066311,
+                                    44.044919
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Beall Concert Hall",
+                                    "description": "Located on the University of Oregon's campus, Beall Concert Hall hosts both student and regional acts.<br> <a href='https://musicanddance.uoregon.edu'>musicanddance.uoregon.edu</a>",
+                                    "type": "Concert Hall",
+                                    "address": "961 E 18th Ave, Eugene, OR 97403",
+                                    "phone": "n/a",
+                                    "imglink": "https://musicanddance.uoregon.edu/sites/default/files/styles/custom/public/field/image/bhall_08.jpg?itok=6VZBsRz5",
+                                    "imgsrc": "https://musicanddance.uoregon.edu/breaking-news/clear-beall",
+                                    "imgsrcname": "musicanddance.uoregon.edu",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.078341,
+                                    44.040281
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Blairally Vintage Arcade",
+                                    "type": "Bar",
+                                    "description": "A Vintage 'Barcade' that hosts both local and touring acts, Blairally Vintage Arcade features a variety of vintage arcade games, as well as a full bar.<br> <a href='https://www.facebook.com/blairallyarcade'>facebook.com/blairallyarcade</a>",
+                                    "address": "245 Blair Blvd, Eugene, OR 97402",
+                                    "phone": "+1 541-683-1721",
+                                    "imglink": "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAoHCBUUFBcWFRUYGBcZGhoZGhoZGR0aHR0dGRkZGhcZHSEgICwjHR0pIxkZJDYkKS0vMzMzGSI4PjgyPSwyMy8BCwsLDw4PHRISHi8qIykyNDMyMjQvMjI0NDIyMjIyMjIyMjIyMjIyMjIyLzIyMjIyMjIyMjIyMjIyMjIyMjIyMv/AABEIAOEA4QMBIgACEQEDEQH/xAAcAAABBQEBAQAAAAAAAAAAAAAFAAIDBAYHAQj/xABKEAACAQIEAgcEBgUJCAIDAAABAhEAAwQSITEFQQYTIlFhcYEykaGxByNCUsHRFBUzcuEWQ2KCkqKy8PE0U1Rjc5PC0heDNVXT/8QAGQEAAwEBAQAAAAAAAAAAAAAAAQIDAAQF/8QALREAAgIBAwIEBgEFAAAAAAAAAAECEQMSITEEQRMyUWEiM3GBkaGxFCNCwfD/2gAMAwEAAhEDEQA/AOZgk+NIkd3urRHF4djJEGI7Sjb0oXj8Na9q24PemsjxGm1IEpOkxBprA15Xs1giGlIGkzE6mvKAR9NJps17y3rGPQ1LNUtjBMylpAA3118NNzTLlrLRoFnivVmxispqotudzUyWwKVpBNlwvpReW3kDlV89K8HEcMku6G7c8dF95/AGsr1lNZ6l4URtbCuN4rmAFsdXvIAGmpMBj2iNfChZeo2evFeTAk1VKhWyTNXopgNOFExKpp61EpqVTRQCVaktuD591MWniyrMC2kayN/LyNMAsoKlVa8TWrCJWMe2tKv2HqoFivUxiKfaHprRAHMOKJ2bdZ7D8QY+xadvEwo95oxhUxL87dsert+VYAQ6gV5TP1be/wCJb+wtKsY4vnNe9Yf9Kgz00vQGJ5rwtUBuV5nJpQ2Sl6aXpNa10Onef9TTlEeu/jG1ExHnNe5Tv76kmmuJBoGCth4XskajUZfdsDUDoCef9r86tvbWBlBgKJk8+dRlDTtC2Unt5e/Wvc1TXVhT6VWII3pGhkPk0pr22pJAHOk4jQ0Ank06w4UgkT4Uyva1GJ3v5uQ+fzpoaocwpwJ5Csgk6mpUqsFNPCd5NEBZFwDcgVImJXlJ8gahtIByFW7RpgUPt3Lh2SPFm/ATVu1YuN7TwO5RHx3r2zFW7KVgHtjhqHeW8zRCzgAPZUD0r3DpRGy4G5A86ICslpl1q3hcfBir9m2GHf5V7a4dbuybZBIOUwdmG6kcj4GsmYX6wPhSp/6hfv8AhXtNaBRwDNUy25AP+fSmIoJ1q0KQYl4XbtG5lvMyoQ2o+9HYnQyJ8KrFv8inNannTerNYwgZ076le0y+0pHmDUQU8waXWedAI8U4U/CYdrjAAT8vU027bZSQQQRyOhoGJBiWHOpbeOK6kBvOqroV3EaTTCDTALmLxvWRChYjadxzquXJMnc1DTlNKwo6D0U6D/pNtLwv2ROoTPLDwYAaHwpdNuh4wqG91qMC8ZQwDdrcqO4Hl3VhreJI2NeviC25paGEttYJLGfsgD566ek14EFNBp60TD1WnlKaopC6oOpA/wA7VgEqJUypTF9KkQisYetupktGoxcUbkD1r39Y2xu/uk/KiAtKGjQwe/ertjERGb5UKTjtobKzeS/nUw47cI7GHc+LaD001pgGkwOMtmc7sNOyFWTPiSYA9KIW+quDKyh50IMAeck1j1u4257Ni2viwn8fwqxa4BjrmpuhP3dvhBrAN3wXh9y2RkKIgaSmTNI0gKZjkdfhR21jMPZzF7lq1mYs2ZkWWMSTrqdBXPcP0KvXB9bi7rD7oZo+JIorwz6PMIxYQ5ZTDZ8y8gZBWA3pQQWav+VvD/8AjMP/AN1fzpUM/wDjbC93wf8A/pSpgHBbawJ/z61Zw9ssdKroJIA8q0WGw4RQOfOslYG6IrGHCjvPM05rKndR7qtAU0rVNhCmcIndHkaibh45MfUUVtWMwOsRrrTXskEagzA99JcW6KaJKOoI8A49dwiZEt4dwCTL2hm172EE+tD+lHEbuNKs1q1bKyAbSZZB17Wuv8TUi4RpYCCVBJgjYbnXf0r1MJcIzBHI7wpI98VnBLkClIzL4ZwdQfUERUJttyj0NakqRNMW2pAkA6c9a2k2oyzFhvXgcc4+VF8VYXJIG3/tpQa6kUrVBTHi4vj8DTg47x61VYUqUay31gHMelejEDlNOwtggTuflSdWH+YrUazwYg9xpC457hUbXI3+VIXR3GsEvXLzNbRToyFtRzU6geYM++nphFDgXLhKxJNsq51WVA1yzJAOumvdVAXe4GnLcY7KfeK1ALS4VOYn1q1Zs2wfYFC+vbwHqaQxTffHoP40xjRWGUfZHuorhsRFYgXRzOveFAq3iMbady3bUHZc5gaeEVgHQLGMA3YDzIFEsBxzCWyWu3EPZgA3VCg95E71y5b+HG6z+9mPzJqzY4pYQyLS6f0E100mV258q1AOm2umGCUx16k9ygsfgDNXsH03sgsbeHxl2SI6vDufsgfaiK5hb6XOvsKFjaFA+VTL02xS6htzOvfp/CsY6x/Lh/8A9ZxD/sr/AO9eVyv+X+M++KVY1Ge4LZU3U6wNknWDlO2kGtpe4JaDQLmIRY9prauvlIH41l+HYW5cjqxmZSWiJ08fCtda4pjBbNt8MSCpUsgcHUdxB+dZ32Cq7gG8mR2UPnAIhspWZE7HamTUj28rNoy7aMMp2G4k/OmRRT2Fa3CHBtySYA9aZjbRS4viwI94r3B3ES2TmOctGWNMsDWfPlFe4y6rlIYA5hM6ACFgk91RTfiX2Ox6PA9ydsSoDmPaVlEcpMk+/von0axwtAsyO9sW260LLBVDGHy7A6xpqYrPuwzEKe8EyCDofZ8KLcKwpS21wk9u3cQDNAMHXkdu4xVslNEo0mFei11RdxMZSIlQ5KqTmMTHmaodMlX9I7MQbanQyJMyAefnS4HZY3LuXMYAzbSRB08yaq9IrbI9vNmk2h7W41bTyHKljJ3Qs4LTqRnsfbABHeV/E0Ix9mI8gffUuJut3n31GXL3EV2IBZVk6wCwE+k0zZNIGsKnw1ksRA15VLjcPluOg1ysVmN4JAPrE+tFcLhWtpmgFufKBB0+VBK2Hgu8M4cznq7cZoLEkgDTfU15j8C1t1W52cwLAghpA7o8jRfoZbL3Gzanqm21kl0EfGvekFlrl3KAAyIwl9IGY66jTePWpPI45NPaimiLhd72ZPEWlkgQYO9RPgfq88iJ2nXeJo8mBy2yWkMSwk7EqdY7+dD3wrG0GCNlkKW0y6vp484qjkhHGkrAd23GxquTR3jVnK4EKJB8OfPxqlw/hwuuQ121aA3Ny4Enyka1rBQOFPBqXFWBbdkDo4BjMhlT4g86hXSsYu4XAvcJAiBrvMT5VHcwrKGMCFMEzU2ExjWxK5e0YIInTTWpeIYZ1BeTlck+yRGukz30tjpKgdGgOnlOtHsRw9LaXCEMqshjJE6cisUFspJ8a7UvRSwiJ+lXbhL2wWS2gCQw1ALSZ5TRafYCa7nNujXD0vYi3buDKjMM7geyoGYyB3xGvfWi6Q8NzW70IFVELJCBOzbOZRoBv+NUelnDbeGuIMM9zLdVpzgAhQQAsg6/wFW7/wBH1zIpW6t1ipdlErkAAILF4iZgTE0Gn3MpLsYSKVXP0X/OZa9pgbmu4VaFsBrdsKHGViWY6MPZ1DbmNa2jLZt4brblpwBbzHKuUmBqRqBWNABtLDIIM9rmBB0rQY5yeH3GPWAGyT2j2G0OqCeXh31zyXCv9nR1GKMldVXBi+NcUS9c6xQLalVgM8nsiCdqGYq+QoKnU7afgalxIW2EGQMcisG3AzCYXf8AE+VLHYZBZtXMxzXQ7EbxlbKB608bWxOSjVJFC7ibq9ljB05CfeJopa4dddQxuFZGzKDVLAIgfMwLBRmgCZMxEc6PYvFwSvPLmkajbae/wpMmSS2idfS9PCa1S/BFgOD3bjxbF28w3CIAoPi2w8prW4boJibiZnCWyBIUsCxPccsge+iPQq9cPCWa2xDq9xgRuSrSR661Y4Vxx3vW2u33gmMi2iEk6BSxj3wfOklka2bB4albglt92D8Z0NxTC2Ft20iAzrc3/pFcoj0Job0h6JPhbTXb15TAOUCTMDaWiJmm9I/pHxmExF7D5bR6toUlD7JAZefcRXPcfi7l/wCsdyxYsYJJA8BJ0HhVIqdVZySd77G4XoHhmUF+KWFJEkQpgnWJ63WoMZ9HsIOouvdcBZVbTRJEqwcdkqQQdCSJ51zkDWBWy6PdLcXgMIWtNbKG7kCupY6IDIOYabCKZxltTFTQsR0OxVls7hQoykySpgneGAJ1q8yG2kk2iMwJDST3QRA012qLC/SFi7j3L7m3nRbcRbOUQzQIzeJ1mpcb9J+KuWzbJtnMuViLcMQdGAkkDTSYp0n3YYtd0Db/ABu51jPbYKSMsqBtAEAGY2rrOA4Tw10VzcQuUAYm9OpALAgtG9c84PirGIxGHtKqTJy6GFOXsq3frBjwroP8lbjA5bto6xpbOhG49rT1pVDUk2LKVPYrcb6O4AWbjJdhgrMALqnXU7GedcuGJPUi2kkEqz5Qx1VpIMiBy2ov9IuAbDsmZFLAkKyiBLAMG21OnfvWw4HZ4UbFrO2H6wopYNcAOYgZp13rn6ifhdm0/TtRSCUlZkOE9CcTjbYvKgVNQuZoLQxkj1kaxWUv8GJDsLigruhIzESQSNYgH+Fd44detpaZbGV7YJUZWLAAcgRXOOj/AA6211nuG2/Vs4NtrTOfa7J09o8gsUcOdzTdM0ob1Zza5bIJG/kQflUmIwly22W4jI0TlYQYOxg1tekzLcuLbiwg63si2otEggdtttdxO2ggVssFc4amFyItnPE5QqkkxP3yZ/o55qs8rgla5DDE58fQ43h1uIyOFI1lSV7JjunQ1psdxMdXchiWI0BGg2nQit903wIvcPwhthclrNdyjQFEttKrlJEgSdztWIvYnBrbkWUVw1uAzZjuCzEck0I8ZrSptbGjB6ZbgHgUPctoEBPWAyBJ328q+iuP2Aba6bD8Kwytw6Ove/a8OrAVDpMNlOhnSD3Cd6oP04TC2Ft20S5eZ2JZgWVLZ1UQToeQXaBNWtW0tyUYSaTar2B30hJF2wP+Ufi9dD4phsmHa8jvmFreCXYLbJGjr2Z0mI0WudDH2cW74i8+QhZaAQuVdlCLy5T40Z4RdXEWuziHbDWWJutcXYupAkEy6idttTNLKTb2Q7x6Kto5/n8a9q7+k4D/AHuI/sWqVCmNqLGHuTbHlWhXirjBkMWdbdqQryVMbDXSI08jWTw2ltQe7Wiy4wHDlArmAykToTB5HlrtUlV7nf1VvFGgRx/IBae2fqrlsFB9pCN7b6cp07xVDEXs1u0s+yp9JYmrGKtW/wBFtnOetDQVjTLk323mht22VVD94H4GKoqPNe5c4W56wxvlMe8UUxbnK20ZT76DcHb6z+qfnRbFN2G8qhk8563Sr+w/ub36McWV4eBDdq7cWVEkEnQ76VTy3GuxnuXLiPOR0JVYbSWLaeOlWvosAOAI/wCbc/CvOLXUu3JVcoSczG2GA1gkjmNPa1qOd/Ec/TNptGa+l/hx/TLdxV/a2tYO5Qxp36EVjMLcuZeryglSYBBDa8vEV23iuEw74N3NvOURnDOpzSBqVDbAxsNK5HxXjtu4hS3bZQQILFSQeZBABjw8a68cnJI4pJJsojhTmDleTyUTr3ATNXuL4B7dqxZIIb6y4wIykZmAXMORIHOguGx920y3LdxlZTKmZgjz051qOkDhbhYuc13tnlqYB2855VXdci7PZFF+FC3YPb1dgpIIIkK7RH40FTDELmMeGvdWlTDJcRA7ZoE6tIkneCdZj3Cpf1bZt27rhQWCGCeROkgTEx4VZtt2kkiWqMdm2AujuKNvFWXESLi77amPxr6K/XVlTo6BiAHISST4wR418wloOnfp+FajB8aUAF4Lx2mymTG23zqEr7D7Gt+lJxdQ3EuI4UpMAAggka6+I91QcLym2sqphRuJ+yPd8azb8QsENoGnVgVZQY5f6RRHDcTVLZzMo7K5QDIJ55zuNO4Glt1udGBKmrNj0exH1NwAgRccwDHcNprHJauoXxFq7btlmuW8rsZiSGaBMkTp3b0FscTuG4wWSCSZDRE1PiXFtsubsFWYgtPakaxyMUIx0ttdxJtORf4XwC89xLk9qc6xDG432hoVYbjlA1rTJ0Y4g8ZcOqt2wXa6AIMZRGQHQbkb/MZ9HPE7NvGW89xFTJcOYsFAOUAAnxk+6uuYvpRgrQJfFWhHc4bu5LPeKLx63cii6iWNVDYzGOL2kw2HugZ1s4hnKsWA+quLAJAnzNcis4O3daHuvkQAMZlvDXKQvrPnW5+kjjNq6+FxeHuF06rErIzKCUKpEMAd7h5cq5YcT2j7QBiQpgGNpFPpojrtNMOvYVB1PWuU1OVrjLb79hu2vcPOqWIvPfLXHiQFWFUKAqiFAA2iPHzqEXC1xf3vxFXce/1be6dudM5bhVclvgVrDlAl64563PmW2oc2wB2Hg6zIkwIiquJ4gcOt3D2Loe1cYFnE9sD2VMgbc9ImgiXmUiCRG0aEUwGlVpvcEpaklXBb/TW7/gPypVFkHdXtGwUzV49Llx5Ft9hurD50U4dwCbRYYlc5UsbRUyrbakEkjxiseeC4s+2CP37g/E0Us2bo0QN3EWwY/u71yTjfEkdjyycUmj3H8NYOqM6gZZJEmI02IB51HxPhjLbt9Wetyz7CtJBMgxBMURt8KxT/AM1dPow+cU610Sxbus2yqyJJZZA5x2t6HiKPLRHQ3wjOcMtuLnaRl0jtKV5jvFGsRg8wI6y3B09r+FGr3QrEM7MGthZ0DMSfgCPjTbfRrGW3BCCQdHDBlHoAT8KEskJO7LwnkhHSgh0JxdrDW+oe4AzPmUNpOYDTuoRfxts3LkN7TMDvAGbll3o1wro1cbEC7fv2mbXTMS2aIU6gaDuqS39HxDEm/oSSALf4lvwqUpQb3YISlG6Q7H9KcOcO9r6wlrZScvZkrHNpiuVjBM7BC4OVYBg6AbAD1NddH0f247Vy63qg/Cn2OgGFTtFHM6SbjfIEU0OphG6snLHZyf8AUiAa3D6AD5mrnE7lvEsCSUygxDDXbvFdUfo1gUHbS1H9N5/xGobKcLtzJw4jTsorGe7RTrWfV3wmzPEkuxhuH8IS7bVRnLQFAFvOXg6DQgSap4zgd3DK+ay1tXtuFLhQWI1iFc99bI8Ywdq+ty3fGWcxTqmEjUaMCsCT3V5j+nWEjKLTPHcgA5blnM+dWhkyVdP6E5QhxZylOHXm2s3D5W3P4UQt9HsY22FvEf8ATI+YrW3ul9sDrEwBZAdWkqojvZVge+qt76QLhH1eGS2OR6668ehaPhVFLI15RHGK7mcu9H8WglsNcH9XN8qh/Rryg5rVwaaSjfHTSjD9MMaf5xR/9ak/Kq6dJ8aJAvv2jziPICNKdeJ3SN8HuDuFPldswgwN9I1qa+Q9whdiuvLnrHwqXEcbxTCGuvHgY+Ve4fA3Fti86t1bEqrHQHmSJ3Gm/hTJPuK2uwa6C4ILiLo3Bw2IGvf1elZ7qGjL2tR3E6yNvdWq6Jui3HaG/ZXF0aPaUjl51TyBT7Hxp9OwL3G3Ibh1u1mAurfvDISM2S4lp80TsWBE94rP/qa4TtWqbHKqgdWN/GvE42BtbX40Gl6mX0M1cwFxCGIiNfjA+JFLEo5Cosmd+ck1q8Vj7mQXHtZbTQFcocrRmMAnczHurN2HQgyBmmZidAIAHLfwpGtx09gXiMNGU7TodecTpAqFxAFXsc4zlTEIQNB/REkAaco9KqYplOxjuphRv6R4Uqgkd9KtSDbOh8I+kF7MC7hrTRu1sKh8zAj4Vs+GdOsHfgdZ1bfduSvx1Fcee3An31XutGukjn/GueeCE/Yqsko7Heb/AEhwae1ibQ/rg/I0Nv8ATnAr/Ol/3UY/GAK4kbhOszS156edTXRw7thfUS9DreJ+krDL7Nu63oq/M0Lv/SkZi3hP7Vz8lrJcCwWZmfPb7ClhmJgEbMdD2fGr7cbKjLiLlnFoPsZWZh4pcyqUPqfKn/psa7A8aT7hK79J2JIyCzaAPJpf50Lv9LMWTmS71Z7rVtVX3Tr61aw3RNMUeswd1WQrJt3WK3EM+wQFhgeT7UGucOdWZWUggkEHl4VaOCNWokpZJXyFrvTPHOIOJcD+iqr8d6G4ril5/au3H/eYxJ8NqqXEymPkK2XQBbQW69y2LjkMiZlzLASWG43IiisUI9khXNmfs8QOGZ1IZmMB2V+rM9ywDoJpycNXFKThsSxumSbF5wjn9xwcjnwOU0/plgbdvEdbluG3dyuIyhBmQFlGpMzNAhcT7FpJ3BJM76bEUWqYU9gle4PdsytxCrDedfjzqkiS4UmATFaTpRxG7ntSwNu5h7LwdYJUho9VNUOjWCW7ezPBCEEodA0mIJMaU8nGIkdTL3HuFLg7lo4TEXRmtK5YN2c0kEqQdQcux28abwp7OMvLbxKo118wW7b+rYkKSM4XsOdN4BrQ8U4MLljqzlZbInMsFkGYndpzDtMNzQZuGWrOJs3cI8qnVuyOrAhh7aqwXUGNiPtbmpwkpS24KSi1Hfky+NCfYMitBbxQfAZWQgYe8mYKBmIuowDGeeYR60LxOAm4xVgAWJiYIBMgelaUdU6Ym0q/tLX7XN2na0RcUxAUGc2sTVY5FZJwdGY4niLL5erzDvzAD5Gr1+9cuYe0HdmFtiigxAXKCoEetQYbhaAMTJIWRPfmA2jXQ86IqWay0mcrpHgCGH5VOWTU7KqOnYfwgZfCRG8VaxBXYGfKqeEaOVWroJ3HuoqWxnHcG33NVmK8wKs4hB41UdKm2MhuIs3XRUtJce2CSFElVY+0e5ZqsvB741ZFWNTNy3MDfTNPpRDHIwsIimDczMf3Zyj3wTVbhXDYDMBL6Ks/ecgCO7z8abdC8k3D/wBBe4HxTX2U6sLaKsnu9qQPKt3b6ScFS2Ldi2LRzfatMGgc2cgknzNYbpJwS5hrsMjZDADkiGbKM0dwnae6gdzz9+lZxtUzKVO0dV/lDw//AH9v3H/1pVyelUf6derK+M/RGhxHDnu3XtWSoOZ8uYlRAY8yO6kvRXGIQQbYPfnJj+7RnAYq1buW2gHt3pOskZtNqM4vpFYIgWgDzOY/n86tT4J2uTON0YxV7Kl7EgqDIVRPu2APpWe4pw9LN0WxJGYqZM7MB3Dka1t/pSF0hNNRJ/LX41kOKcQa9cDtAaWOniwI5+ArRTsDao2vD+D2LDFkQnMhQgliMrCCNTWXxd61Zcr+iZdwrO+/KdB+NTDjF4ssTc7hrB8NBVJsSHY5gFn7LED+8RB9ctFrszavQL9EeJt+k2wgVZttb7MyZGh1NU7fFr3aDfWamSRr46incNCliLdvt9ypLR3giZHiKJpbwxUBgbTLoTqxYnnljTymntwW363/AETdS5/ewEucPu3R1mQBeZNxB6ROb4Ua4RxG7aNsdWotpuoyrmA3gsZJNEP1dhAstijtMBAGPkJmoxicOttkW7iGBjQooU+hBj/OtR8SMuE279B1FrmvyUeL2L14C5oLahVC9ZMkLExABPlQYcPtxmLKW5qcwI/uxHrRTFpbZxkW4qxrKifMRvVfEYTKdO0DqCO47T3HwrphBPl7v/qJSlJcIa1l3a2jjOVUJbUsIC7hQZgCSaK8OwRt37q9gFRbkZsyglWYydzGkxQVsORyPuqpiVuyWVyCdD46Rr6UMuJy4aoOOajzZu+FIy3bRb652W5diDDdXaJUZY+8V/KugtZTrEKCcjrmyFVFsdSzZrg5gk7d7KdhXHeinHLlu/bNzKnVoyqSOz2is8/agGut4fiVsqGS4xzpbzAWiyzBzSwTWQANW5aRTQxuEEJOWuexy76QrNx+I32tgOrG2Vysp/mbfKZ1+NZsYu5bJR8ykaFWEEHyNdG4rhrFy65MhpRe0i7KiLJgwNBt5VSx/BLIQEG24B1XQHzAzamvMydZj1uNP8Hpw6Obgm2jF2scxMSdd6L4VxkuA/dU+5h+dS3ej6MZQspgmBqIGpMHYCKGrnts0FbmhE6jeDOn5V0YqyeUjmxvC6kXMPc10mrl/EZRJ11GnmaFpi43VgfDUfDX4VHj8arBQG8SNvLem0SWzRPXF8Ms4jFWyT2THeG/A1EtpX9lvRhHymoDYOWSPGqTOQdCOZ3/ADqksVIRZLNPjLNpvatXICBFdHAIgb5WUjv0rM47CXA0IxZNxOUHfmAYmvBj7g0k8tifSmHGsTrNTbl3GVGs6XcRuG1h8MpS4vUWnuOQHYPqYzTpoFBEGsK+nhRfC4ntCq3ELma4SdzHKm1OT3BpSQPzeVKpso8KVMKaHHYVlYLIRxPYhidd/OqGI4S+7C4B/wAwrbHmM8V1HE8JF24ba9aviSI8yfwoFxropiQrQAyjZgFkeMGku+49UYs4ZWQKYldiNdPONaHYmyEIEmCDvpWibo06/tMSUAE6kH4VDjEt23V7FwXCkEXAhTtfutO3lQumCrCnR3gLSL3VNbtgSLt1soMj7C7t5xHjQ/i9u2z5EZXUc0txrzAjl5mqWP49ibrZrl+45G0kaegEVTweOZG9piO7MaO3Y25escOuBs1pntsNiGyH3g15x7iOMBVMQZZBubaBiDEZmUdrTar+Guq2qk+oE/6UT4rLXEmDmtqdQCPZ7ue1aL39zNbGOs8W5MvqPyolhcWreyQTt3EeImljejqsexCseQnU+ROnpQvG8CxNkZmtkoPtASB+Iqyzvgn4dO0bDDcPUjMzsSe4wPzq2mFtZgGmCROpJ+Jg+tYHCcXupEXG8mMj+FH8Pxu6AWdCVUwXUZkmJ1ddK8/Lizylal9uD1cXUdMo6XGn61Zun4Hh1Wc6eGiT4DxNVbvA0VJdEg8gRmHcdKAW+Mkx2Vg85nSkeJsGBBCjuj+GtQx9F1V7y/Y0ur6ZL19qCVrgltbgKkgEd2bmNtjRq5eaOrZWEKqqrCFJtqSNtSIYnf5Vl7FxSczXNDOus7g8h4UexHHhbeS7FDLFCDrKqANdhIJ0Fe/g1Y4JTds8XqVHLNygqRmuL3HS/dXOey2XQmNABp7qr4fF3FcHNmg+y0kHwIqxi8Zbu3WuNbjOxMAkATtrmHvNW24TNsutt1y7stxLq7bxMx5Gp5Z4U/jjVhh4tfDLj3YNe8rPMOgMyFYsNe6dQPU1ZvYDIJVcwBzC4rZwRGggAZTPeKHTT8tWeFf4uvYn4ru5Ky1a4bduJ1iJmEmYYE+o3pycFvNp1LnzX86pG2N6nZkgRbIIEEi4dfGCDHpQlDKuKf2MpQe7/ku/yVvZM3VMusZQTPnA0ih+O6LXE9tWWfIx5kbetFMDfm5Fq41jQBZckN5mYBPuohe47jrBy3JIHMoGU+IZa4XLqNVbP2dpnTWPTav6rcw93gjgAq2vPX3RzqtiOGXrftKTpOhnetu/HjdgMqR3KuUH3Vaw9205j9mTtJJX1nUDxk1bwpVco197J+JHs7/Rz7Cq+YLkcsdgFJJ05DejvEMOqN1bqCQqyCNiVBPzrQ3FtyAwWNZgkE90Ry86g41xaxlCXXL5fZtrDP4aj2R5mlljSXI0Z2zMfo1r/dj30qk/WWH/AOHuf91fypVPSympHXyjJCghl5wAMvmTUd7E2yMpIbmBBYn4EGp3soCQXZmHtS2Y+oBGXyih6opJyhkPjcA+UxXNaZQA9JkTqbtzqcoAAzAZdSQO7esFibDWxqsKyhl1H+o9a6D0isB0tWhBe7dEgMG0XblIEkUB+kLAdTctjshTbgAEmIMGZ1qia2FZhrr61Gr9wqbLc0ygnXTY6kGN+8TVNrh0knTQa7DuqlC2a7ohdtO5s3mjOsow1hvuxsDzrWcUwqzhkUyWzIo78oaPGdawfRfD2zczXWa3lGZXX7LCMpI+1z0rYr00wWAtkYO013EtOa9eMmTuZ3A/orA+daMW5OgSexbPCDg7lv8ASAy27sgZW7SnuOukz51LxTg6XyocZLabKWgt4tMgnzrmuJ4vi8XiA7u926xhVEnf7KqNAK3/AATpelpHtY22est6KqoN10KPro0jn76ScGmlH8sKkmrZJxTo/gLdnMbF12PZU2iAQTzLHT1MjwrCYrB3sI65LjW2uDRVYhiuwzQAGHn7q6pwrjWGxWq3ENzlafsEeQOh8xNZPp9ZZsfh0CwSoEDxehinc9G7fq/9Bkvh1cGcsdJb9gdXetWrqAkhLtsaHY5WXKy6dxqDFcctuQbdrq/vL1hdfDKSJHPQk10/hnCrV206XLauvXOGnc5YEA8qA8b+ji01xFwzG2Xz9l26xeyuYQR2htVI5VGbitnYrhcbfBlLOMQn2sp7m0Pp31cuX82rbxE+XfQ3FcNxnDyS9sFGgElVu23AMwZB084NDH4iSxZQLYP2UnLPgCTHkNK6Y5r3f5IvHXH4NVhcOjmGuBO7ssxPhCiugdHuH27VnIAVdwS+YQx0iQNwK5Bh+LbZh6j8qLYTiJDBrdwhhzDEH/Subrull1cajOu9e5TBlWF7qzT47oheQlrZW4N4Byt7jp8aGXccyqbVy2YBEq7MSCO6dvSidjphcRQILtzLkEekARUOPxNvFDO9xUu9xXskd2YT8al08uqTUeoVrs1/JSccTTlje/owdaFkntNcTyVWA/vA1ZXA22H1V9Cfu3B1R9CSVJ9apHA3OWVvFbiH/wApplzDuntCJ8QfgDXqrn4ZnG36xJShDZTA1gzsPHTeidoLbALXSytys3O0B/SBXKJ7uVZx8Yi6bnuH4mqV3iJJ39F/E0ckod3ZoRkuEF8bdthjEzO259Y0qk2OK/bI8Fhj8dBQxrzN4DuGnxrxByFc880pbcDxxpBC2125IQORuYljrzZohfSNqN2uiptx1rCSA2VdR2hIk9/l761fAbWGt8MtC+zr1txruS0O1cy6AGBsJob0jxK9ahtsVRrSZQx7URAnlNJOL0tr2Hg05IH/AKntfcX4/nSrzKfvn3ClXNUvUvSOk28PKgmJ8FA94r24og6gRzmKuuttgoJCuY0XQ+UaxTcVZs21gqrmJAZomPIVw7vkqZXGXk/S0e40LbgAiBqRP5UzphgbeJwdx1f9jmuBgmadNVJBnX3U/BYZLjM7jmTAk6HbUmdAOZp2J4fauyhS6LZBnKzAGRtAbU++uyShFpb2kRjqlb7HEbiknavEw5PhRrjvCmwt5kOqycjciOWv3hzFUVqqaasWi1csxZWT7R8qGPZI21o5xxMhtp3ID7/9KFhTTcbA2YX6KYm5bS89pwlxQCWygtk7lJ9kTvGu1Drl0m4zOSXc5jPxPn4VPw7Du2YW9S0LHfzipeNcHvYe5a61QpdCwWZIEx2o2NLVSd9w9ig61Yt8VupcS4LhZ7YhC/ayju15a1XZgDtPhNRMRpvtrPf4Ryop07C1ZpeG9McXbR1Q2iO1cOYAGWMsVOYSZOwE0R4X07b9ItXL1sZQHUZHOmZSoJBmO/vrDGImR5az57RTDQSWrV3A91R25LguJ2hlBGkHX1YQIPlQbHdFcJimu/VNaZLch1aMzZlEkaggT3SayHDul123bVHRLltYUg5g0DbWY28K13C+lFq8tzq7nVP1WVUaFYHrF0WTD6d1JixyjP23DklcTHY/oFiVLdTF4LuFMNB1GhifT3Vmb9q5aYrcVkYbqwKn4117B5UzfWubhiZG5Go8ZHnVrivA7mMVFFqQRLXboXIB97k2b3eZp4yk5VRmko2zj2H4g685Hcdf40Tw3EkJGbsnv3Hw1rYcV+jS1lBw18l+YKzbkbhWGs++sDxLg2Iw+t22yrmKht1LDcA1aOVptJ3RFwTV1QWv8RRdjm8qHYnGu51MD7o/GosHaLqIBmSPPaB567CtPw7oo5CtdPVqWAy/zh74EQPjvtWnlfcaMEZXXyFMNwDaup4noBhbiEzdtlRoFYMWPLMCCB6e+gn/AMbO37O8oPNbiFf7y6HzAqCzQfco8cjClyatYK2zGIOxaeUKJM0dudBMUpjNZY+Fw+72N6t4fgpso3WZSxBEAmCOcGAaeMot7MVqS7GwxCZbWGtyoKWU0YDdhJ1P5UOxttWtWi4Vh1YEZspkEiZGsUT6TqFuZRaLZUQBtR9ge+KBO/1do/0WHuY0W7cgRWyIMlv7jf8Ac/hSpZ6VQKHRLV3XKjyREDf+B8jUPEHC27rFh1kGVg6nbl/pVe65aHAEE8pEeGw08ap8VdSF17ZYaDaB8+Vc+OFySZab0xbLHCgVUA2ySd5MCOW2o9auXe0hKSdY7R7PjBA299OQwAoB2E/j61TxOEgsbuZxMqCcoA79IBbzNNN6ptgjtFI9xuBs37Yt3UzKBsZ7J55eY86x+L6DWkIuW7j5QwOR1mRMQCYPwrd4O4hQEARsIknTb1qDiV4SlsNMsCQO5ddT7qGFzc1FeoMlKLbMViOjDYjEs7NltLCgAdo5dwOQ86YnQ22LgZ7hNstAthgWCx9px8gPWtAePJbBRAZ3JykmTqZ0qouIzOGOskkHbQqZ0jU+Ndqyuc9KVK/yQ0KMbveixh8FYt3ma1bQW7QVQNgzHUydydtaAfSHdZ2tOSsjMsDlMEaelGyFt2FzHKHZn100Ggk8qB8aaxctOoa2IGYMGBII9anlWmaVcIaFSi3fcxNxz6H8KrM2tOuPURNMjDga8dqjY01VJMU4pPaeTHfp+Rp+Hwlx7gtIjNcJgKB2ie6KM9HXt279rOsoWAcRMqxhvh8q64tnh/Brb4kks90krmOa486hFnZe8++jHdbCy2ZU4BwdeG4Xr+JX5jZCcwU8kXm7H3VDb6fYXGfV52sjUC24gN3Sw0JPdNcu6UdJb2Pu9ZdOg0t2x7KDuXvOgknegTGhKKapBT3tncb7m3lIMjYQTHdyrKdPLubBWQdWa67STr7TVj+FdIMRYAVHlB9h9V9OY9DRXH8WXGrhrYUi4rBWnY5mJkHu1oY8elP3NOV17BwYG3ZwvD2W2ou3bpdmAlmUCAD4ajSjuOtXwygtbMwxBIUgDXUnX0FCOljt+l2LNogdQlu2OUOQWb4Ee6o3xFwdliGYGDcgyfCZo54/EmuwMTuO/cNPxm+pyZ027XYnL36zrp6VGOkF0wqlNY1CKNvCOfpQcYlh7LNGhJJImK864AdgAyNcw2PhUNEfQrqZosRfvFAxDGN4AA2nSNJ08aBY+9c+2o7QGsQdxrpXuBxVy2RDAPuobNz5DlrU3EeL3GQ27tsKCViBGuYRvyoQi4yWxpO0TdLcU36VcGYx2NP6i0MN36u33S/+KjPSkpcvuFVQwjM09onKOU0JsYcPbAzAZXcdrnqKvJ7smlsjzrF+6Pj+dKn9T/Qs/wBs/lSqW5WjcWv2Z/6lDsd+0ten4UqVTxecfJ5TTJuPMUG6R+36mvKVTXmChifsv6v/AJVS/nf6r/4aVKq9N85E8/lYKxPtH938Kjwnsj95v8JpUqtH5i+pN+V/Qu9If2WH/cb5VyzF+2f886VKq5/mMXD5SK/7VQ0qVTHGGnWfaFKlRAF+Fft7X76/MUZ+kz/aU/6f5UqVVx+Rk5+ZGNemmlSpEOyRKN9Gv9tw/wC+vzpUqouUJLhmh6Q//kr3/X/8BXuK9qvaVJl8wcflRJgvZu/ufjVXDbetKlUi3ctY39p6J/hFP4n7FrzT/EKVKsvMgPhk3H/9su+f/gKoJ+z/APsb5CvKVPLmQi4RLSpUqQof/9k=",
+                                    "imgsrc": "https://www.yelp.com/biz/blairally-vintage-arcade-eugene-2",
+                                    "imgsrcname": "yelp.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.110654,
+                                    44.057149
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Slice | Pizzeria & Bar",
+                                    "type": "Restaurant/Music Venue",
+                                    "description": "A local independant pizza restaurant, Slice Pizzeria features a full bar and backyard complete with a covered stage, umbrellas, and seating to host both local and touring acts.<br> <a href='https://www.slicepizzeriabar.com/?utm_source=gbp'>slicepizzeriabar.com</a>",
+                                    "address": "325 Blair Blvd, Eugene, OR 97402",
+                                    "phone": "+1 541-653-9937",
+                                    "imglink": "https://eugeneweekly.com/wp-content/uploads/2021/09/20210909cs-ComedyAtSlice-0835.jpg",
+                                    "imgsrc": "https://eugeneweekly.com/2021/09/09/standing-room-only/",
+                                    "imgsrcname": "eugeneweekly.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.109704,
+                                    44.056256
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Sam Bond's Garage",
+                                    "type": "Bar",
+                                    "description": "Located in the Blair Historic District, Sam Bond's Garage features a full bar and menu featuring local ingredients, as well as a stage to host local and touring acts.<br> <a href='http://www.sambonds.com'>sambonds.com</a>",
+                                    "address": "407 Blair Blvd, Eugene, OR 97402",
+                                    "phone": "+1 541-431-6603",
+                                    "imglink": "https://www.sambonds.com/img/about_bottom.jpg",
+                                    "imgsrc": "https://www.sambonds.com/about",
+                                    "imgsrcname": "sambonds.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.108708,
+                                    44.055245
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Alluvium",
+                                    "type": "Event Space",
+                                    "description": "A community space for a variety of events, Alluvium provdies a valuable platform for local and regional groups.<br> <a href='https://www.alluviumeugene.com'>alluviumeugene.com</a>",
+                                    "address": "810 W 3rd Ave, Eugene, OR 97402",
+                                    "phone": "n/a",
+                                    "imglink": "https://eventsfyv2-production.s3.us-west-2.amazonaws.com/venues/079bbdc2-f2e7-43cf-84a6-30ebc847c317.jpeg",
+                                    "imgsrc": "https://www.eventsfy.com/venue/alluvium--fiddlers-green-church-whiteaker-neighborhood-810-w-3rd-ave/eugene",
+                                    "imgsrcname": "eventsfy.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.105197,
+                                    44.056284
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Old Nick's Pub",
+                                    "type": "Bar",
+                                    "description": "Eugene's premier Victorian Gothic Pub, Old Nick's provides a unique atmosphere, full bar, and stage to host both local and touring acts.<br> <a href='https://www.oldnickspub.com'>www.oldnickspub.com</a>",
+                                    "address": "211 Washington St, Eugene, OR 97401",
+                                    "phone": "+1 541-844-1280",
+                                    "imglink": "https://bloximages.newyork1.vip.townnews.com/dailyemerald.com/content/tncms/assets/v3/editorial/3/15/31577770-9828-54ea-bfad-9638285188fe/5ba4f2b3d4dbb.image.jpg",
+                                    "imgsrc": "https://www.dailyemerald.com/arts-culture/eugene-s-newest-venue-old-nick-s-pub-is-open-for-business/article_a6636d68-4696-554b-a802-0b63c98ff622.html",
+                                    "imgsrcname": "dailyemerald.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.100018,
+                                    44.057423
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Hult Center for the Performing Arts",
+                                    "type": "Concert Hall",
+                                    "description": "Opened in 1982, the Hult Center for the Performing Arts features a 2,447 seat concert hall, 495 seat Soreng Theater, and stunning architecture.<br> <a href='https://hultcenter.org'>hultcenter.org</a>",
+                                    "address": "1 Eugene Center, Eugene, OR 97401",
+                                    "phone": "+1 541-682-5000",
+                                    "imglink": "data:image/jpeg;base64,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",
+                                    "imgsrc": "https://fohonline.com/articles/venue-focus/the-hult-center-for-the-performing-arts/",
+                                    "imgsrcname": "fohonline.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.093179,
+                                    44.052743
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "WOW Hall",
+                                    "type": "Concert Hall",
+                                    "description": "The historic Woodman of the World (W.O.W.) Hall is operated by the nonprofit Community Center for the Performing Arts, and largely run by volunteers. Along with serving as a venue for local and touring acts, WOW Hall also hosts community workshops, lectures, rehersals, and recording sessions.<br> <a href='http://www.wowhall.org'>wowhall.org</a>",
+                                    "address": "291 W 8th Ave, Eugene, OR 97401",
+                                    "phone": "+1 541-687-2746",
+                                    "imglink": "http://www.wowhall.org/sites/default/files/images/WOW1.jpg",
+                                    "imgsrc": "http://www.wowhall.org",
+                                    "imgsrcname": "wowhall.org",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.097083,
+                                    44.051086
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "The Big Dirty",
+                                    "type": "Bar",
+                                    "description": "The Big Dirty features wall to wall custom artwork, a dynamic LED lighting system, full bar, and engineered sound treatment to host both local and touring acts.<br> <a href='https://www.thebigdirty.live'>thebigdirty.live</a>",
+                                    "address": "844 Olive St, Eugene, OR 97401",
+                                    "phone": "+1 541-650-6634",
+                                    "imglink": "data:image/jpeg;base64,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",
+                                    "imgsrc": "https://www.thebigdirty.live/about",
+                                    "imgsrcname": "thebigdirty.live",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.094573,
+                                    44.050548
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "The Jazz Station",
+                                    "type": "Concert Hall",
+                                    "description": "Located in downtown Eugene, the Jazz Station is one of Oregon's only Jazz clubs, which features a 70 seat room for student, local, and regional jazz performers.<br> <a href='https://thejazzstation.org/#!event-list'>thejazzstation.org</a>",
+                                    "address": "124 W Broadway, Eugene, OR 97401",
+                                    "phone": "+1 458-205-1030",
+                                    "imglink": "https://i.ytimg.com/vi/Rx80rnVAyS8/maxresdefault.jpg",
+                                    "imgsrc": "https://thejazzstation.org/#!event-list",
+                                    "imgsrcname": "thejazzstation.org",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.09483,
+                                    44.0498
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "Luckey's Club",
+                                    "type": "Bar",
+                                    "description": "One of the oldest bars in Oregon, Luckey's Club has rich history as a former Cigar store which originally opened in 1911. Today, the club preserves its unique history while still providing a popular downtown venue for both local and touring acts.<br> <a href='https://www.luckeysclub.com'>luckeysclub.com</a>",
+                                    "address": "933 Olive St, Eugene, OR 97401",
+                                    "phone": "+1 541-687-4643",
+                                    "imglink": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTRsx6E3WbUaba7RRC0VleSsTarFFo2zdMOeQ&usqp=CAU",
+                                    "imgsrc": "https://restaurantguru.com/Luckeys-Club-Eugene",
+                                    "imgsrcname": "restaurantguru.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.094055,
+                                    44.04953
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "John Henry's",
+                                    "type": "Bar",
+                                    "description": "Located in downtown Eugene, John Henry's features a full bar and stage to host both local and touring acts.<br> <ahref='https://www.johnhenrysbar.com'>johnhenrysbar.com</a>",
+                                    "address": "881 Willamette St, Eugene, OR 97401",
+                                    "phone": "+1 541-600-3994",
+                                    "imglink": "data:image/jpeg;base64,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",
+                                    "imgsrc": "https://eugeneweekly.com/2022/02/10/john-henrys-3-0/",
+                                    "imgsrcname": "eugeneweekly.com",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.09238,
+                                    44.050172
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "McDonald Theatre",
+                                    "type": "Concert Hall",
+                                    "description": "Built in 1925, the McDonald Theatre is a historic landmark located in downtown Eugene. After the motion picture boom, the theatre was converted into a movie house which it operated as until 2000. It now hosts a diverse spectrum of events, including some of today's most popular touring acts.<br> <a href='https://mcdonaldtheatre.com'>mcdonaldtheatre.com</a> ",
+                                    "address": "1010 Willamette St, Eugene, OR 97401",
+                                    "phone": "+1 541-345-4442",
+                                    "imglink": "data:image/jpeg;base64,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",
+                                    "imgsrc": "https://oregontheaterproject.uoregon.edu/theaters/mcdonald-theater",
+                                    "imgsrcname": "oregontheaterproject.uoregon.edu",
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.093055,
+                                    44.048611
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+
+                                {
+                                "type": "Feature",
+                                "properties": {
+                                    "name": "The Shedd Institute",
+                                    "type": "Concert Hall",
+                                    "description": "The Shedd Institute hosts classes, workshops, private lessons, and a variety of other events for local music students.<br> <a href='https://theshedd.org'>theshedd.org</a> ",
+                                    "address": "868 High St, Eugene, OR 97401",
+                                    "phone": "+1 541-434-7000",
+                                    "imglink": "https://upload.wikimedia.org/wikipedia/commons/6/69/The_John_G._Shedd_Institute_for_the_Arts_-_Eugene%2C_Oregon.jpg",
+                                    "imgsrc": "https://en.wikipedia.org/wiki/The_Shedd_Institute",
+                                    "imgsrcname": "wikipedia.org",
+
+                                },
+                                "geometry": {
+                                    "coordinates": [
+                                    -123.088522,
+                                    44.050071
+                                    ],
+                                    "type": "Point",
+                                }
+                                },
+                ]
+            };
+
+            // Assign Unique id to each venue (for sidebar list)
+            venues.features.forEach(function (venue, i) {
+                venue.properties.id = i;
+                });
+
+                map.on('load', () => {
+                //add data to map as a new layer
+                    map.addLayer({
+                        id: 'locations',
+                        type: 'circle',
+                        
+                        source: {
+                        type: 'geojson',
+                        data: venues
+                        }
+                    });
+                //add data to sidebar
+                    buildLocationList(venues);
+
+            });
+            
+            map.on('click', (event) => {
+                /* Determine if a feature in the "locations" layer exists at that point. */
+                const features = map.queryRenderedFeatures(event.point, {
+                    layers: ['locations']
+                });
+
+                /* If it does not exist, return */
+                if (!features.length) return;
+
+                const clickedPoint = features[0];
+
+                /* Fly to the point */
+                flyToVenue(clickedPoint);
+
+                /* Close all other popups and display popup for clicked store */
+                createPopUp(clickedPoint);
+
+                /* Highlight listing in sidebar (and remove highlight for all other listings) */
+                const activeItem = document.getElementsByClassName('active');
+                if (activeItem[0]) {
+                    activeItem[0].classList.remove('active');
+                }
+                const listing = document.getElementById(
+                    `listing-${clickedPoint.properties.id}`
+                );
+                listing.classList.add('active');
+            });
+
+            function buildLocationList(venues) {
+                for (const venue of venues.features) {
+                    /* Add a new listing section to the sidebar. */
+                    const listings = document.getElementById('listings');
+                    const listing = listings.appendChild(document.createElement('div'));
+                    /* Assign a unique `id` to the listing. */
+                    listing.id = `listing-${venue.properties.id}`;
+                    /* Assign the `item` class to each listing for styling. */
+                    listing.className = 'item';
+
+                    /* Add the link to the individual listing created above. */
+                    const link = listing.appendChild(document.createElement('a'));
+                    link.href = '#';
+                    link.className = 'title';
+                    link.id = `link-${venue.properties.id}`;
+                    link.innerHTML = `${venue.properties.name}`;
+
+                    //Add details to listings
+                    const details = listing.appendChild(document.createElement('div'));
+                    details.innerHTML = `${venue.properties.type}<br>`;
+                    if (venue.properties.phone) {
+                        details.innerHTML += ` &#9742 ${venue.properties.phone}<br>`;
+                    }
+                    if (venue.properties.address) {
+                        details.innerHTML +=` &#10026 ${venue.properties.address}`;
+                    }
+
+
+                    //fly to venue when user clicks on sidebar
+                    link.addEventListener('click', function () {
+                        for (const feature of venues.features) {
+                            if (this.id === `link-${feature.properties.id}`) {
+                            flyToVenue(feature);
+                            createPopUp(feature);
+                            }
+                        }
+                        const activeItem = document.getElementsByClassName('active');
+                        if (activeItem[0]) {
+                            activeItem[0].classList.remove('active');
+                        }
+                        this.parentNode.classList.add('active');
+                    });
+                }
+            }
+            
+            function flyToVenue(currentFeature) {
+                map.flyTo({
+                    center: currentFeature.geometry.coordinates,
+                    zoom: 15
+                });
+            }
+            //Check for and close current popups, then create new popup
+            function createPopUp(currentFeature) {
+                const popUps = document.getElementsByClassName('mapboxgl-popup');
+                if (popUps[0]) popUps[0].remove();
+
+                const popup = new mapboxgl.Popup({ closeOnClick: false })
+                    .setLngLat(currentFeature.geometry.coordinates)
+                    .setHTML(`<h3>${currentFeature.properties.name}</h3><img class="popupimage" src="${currentFeature.properties.imglink}"><h4>Image Source: <a href='${currentFeature.properties.imgsrc}'>${currentFeature.properties.imgsrcname}</a></h4><h4>${currentFeature.properties.description}</h4><h4>&#9742 ${currentFeature.properties.phone}</h4><h4>&#10026 ${currentFeature.properties.address}</h4>`)
+                    .addTo(map);
+            }
+            //Add event listener to title to reset map
+            document.getElementById("pagetitle").addEventListener('click', function () {map.jumpTo({center: [-123.0868,44.0521], zoom: 12 });
+            // Check for and close current popups
+                const popUps = document.getElementsByClassName('mapboxgl-popup');
+                    if (popUps[0]) popUps[0].remove();
+            });
+        </script>
+    </body>
+
+</html>
